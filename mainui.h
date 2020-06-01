@@ -5,6 +5,7 @@
 #include "logtailer.h"
 #include "view.h"
 #include "panel.h"
+#include "messagecollector.h"
 
 #define LM_STATUS_BAR 1
 #define LM_TIMESTAMP 2
@@ -20,6 +21,10 @@
 #define LM_HIGHLIGHT_3 13
 #define LM_HIGHLIGHT_4 14
 #define LM_HIGHLIGHT_5 15
+#define LM_CATEGORY_SCRIPT 16
+#define LM_CATEGORY_SCRIPT_NAME 17
+#define LM_RULESET_NAME 18
+#define LM_RULE_NAME 19
 
 struct Color
 {
@@ -134,6 +139,7 @@ private:
 	void Init();
 	void InitColorSchemes();
 	void CreateConsolidatedView();
+	void CreateMessageView(MessageCollectorPtr msgCollector);
 	void CreateHelpView();
 	void SetColorScheme(int idx);
 	void Dispatch();

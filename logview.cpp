@@ -8,6 +8,28 @@ LogView::LogView(MainUi* ui, std::shared_ptr<Window> win, std::shared_ptr<LogFil
 {
 	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_1, "[A-E][\\da-fA-F]{12}\\.[\\da-fA-F]{12}\\.[\\da-fA-F]{4}\\.mml", true));
 	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_2, "^\\w+:", true));
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT, "^------\\sCategory\\s<.*>\\sevaluation\\sresult\\s------$", true));
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT, "^------\\sEnd\\sof\\sCategory\\s<.*>\\sevaluation\\s------", true));
+
+	// category script highlight
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT_NAME, "^------\\sCategory\\s<(.*)>\\sevaluation\\sresult\\s------$", true, 1));
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT_NAME, "^------\\sEnd\\sof\\sCategory\\s<(.*)>\\sevaluation\\s------", true, 1));
+	// body higlight left border category script
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT_NAME, "^(\\s{2})\\s{2}-\\s(.*)\\:\\s\\(\\d+\\)\\s$", true, 1));
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT_NAME, "^(\\s{2})(Score:)\\s\\(\\d+\\)\\sRequired:.*", true, 1));
+	highlights_.push_back(LogHighlight(LM_CATEGORY_SCRIPT_NAME, "^(\\s{2})(.*:)\\sVersion", true, 1));
+	// body highlight for category script
+	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_1, "(^\\s{2})\\s{2}-\\s(.*)\\:\\s\\(\\d+\\)\\s$", true, 2));
+	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_1, "^(\\s{2})(Score:)\\s\\(\\d+\\)\\sRequired:.*", true, 2));
+	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_1, "^(\\s{2})(.*:)\\sVersion", true, 2));
+
+	// highlight ruleset matches
+	// match rule
+	highlights_.push_back(LogHighlight(LM_HIGHLIGHT_1, "\\s([^0]\\suser)\\(s\\)\\smatch\\srule\\s-\\sContent:(.*?):(.*)", true, 1));
+	// ruleset
+	highlights_.push_back(LogHighlight(LM_RULESET_NAME, "\\s([^0]\\suser)\\(s\\)\\smatch\\srule\\s-\\sContent:(.*?):(.*)", true, 2));
+	// rulename
+	highlights_.push_back(LogHighlight(LM_RULE_NAME, "\\s([^0]\\suser)\\(s\\)\\smatch\\srule\\s-\\sContent:(.*?):(.*)", true, 3));
 }
 
 void LogView::Init()
@@ -223,24 +245,28 @@ void LogView::RenderBody(int y, int x, int width, const std::string& body, int o
 		for (auto highlight : highlights_) {
 			if (highlight.bold)
 				win_->AttrOn(A_BOLD);
-			ColorizeMatch(y, x, width, body, offset, highlight.pattern, highlight.color);
+			ColorizeMatch(y, x, width, body, offset, highlight.pattern, highlight.color, highlight.group);
 			if (highlight.bold)
 				win_->AttrOff(A_BOLD);
 		}
 
 		win_->AttrOn(A_BOLD);
-		ColorizeMatch(y, x, width, body, offset, highlighPattern_, LM_SEARCH_HIGHLIGHT);
+		ColorizeMatch(y, x, width, body, offset, highlighPattern_, LM_SEARCH_HIGHLIGHT, 0);
 		win_->AttrOff(A_BOLD);
 	}
 }
 
-void LogView::ColorizeMatch(int y, int x, int width, const std::string & body, int offset, const boost::regex& pattern, int color)
+void LogView::ColorizeMatch(int y, int x, int width, const std::string & body, int offset, const boost::regex& pattern, int color, int group)
 {
 	boost::match_results<std::string::const_iterator> match;
 	if (pattern != boost::regex() && boost::regex_search(body, match, pattern, boost::match_default)) {
 
 		auto p = body.begin() + offset;
-		for (auto m : match) {
+		for (int i = 0; i < match.size(); i++) {
+			if (group != 0 && group != i)
+				continue;
+
+			auto m = match[i];
 			win_->Move(y, x);
 			while (p < m.begin() && width-- > 0)
 				x++, p++;
@@ -261,7 +287,8 @@ void LogView::SetPosition()
 	if (file_->NumLines() == 0)
 		return;
 
+
 	ui_->SetStatus(0, 0, "");
 	ui_->SetStatus(1, LM_STATUS_BAR, "  %-s", file_->Filename().string().c_str());
-	ui_->SetStatus(2, tail_ ? LM_STATUS_TAIL : LM_STATUS_PAUSED, " [%s] %s", tail_ ? "Tail" : "Paused", !tail_ ? " press enter to continue" : "");
+	ui_->SetStatus(2, tail_ ? LM_STATUS_TAIL : LM_STATUS_PAUSED, " [%s] %s", tail_ ? "Tail" : "Paused", !tail_ ? " press enter to continue " : "");
 }

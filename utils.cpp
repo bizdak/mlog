@@ -36,3 +36,13 @@ fs::path GetMailMarshalInstallDirectory()
 	printf("Cannot get MailMarshal install directory, defaulting to %s", defaultDir);
 	return fs::path(defaultDir);
 }
+
+void DLog(const char* fmt, ...)
+{
+	char buf[1024];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, sizeof(buf) - 1, fmt, args);
+	OutputDebugString(buf);
+	va_end(args);
+}

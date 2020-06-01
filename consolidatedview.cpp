@@ -197,9 +197,6 @@ void ConsolidatedLogView::RenderBody(int y, int x, int width, const std::string&
 
 void ConsolidatedLogView::SetPosition()
 {
-	if (buffer_.size() == 0)
-		return;
-
 	ui_->SetStatus(0, 0, "");
 	ui_->SetStatus(1, 0, "");
 	ui_->SetStatus(2, 0, "");

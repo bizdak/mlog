@@ -29,5 +29,5 @@ public:
 
 private:
 	void RenderBody(int y, int x, int width, const std::string& body, int offset);
-	void ColorizeMatch(int y, int x, int width, const std::string& body, int offset, const boost::regex& pattern, int color);
+	void ColorizeMatch(int y, int x, int width, const std::string& body, int offset, const boost::regex& pattern, int color, int group);
 };

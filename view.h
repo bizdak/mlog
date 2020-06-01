@@ -8,12 +8,14 @@ struct LogHighlight
 	int color;
 	boost::regex pattern;
 	bool bold;
+	int group;
 
-	LogHighlight(int color, const char* pattern, bool bold = false)
+	LogHighlight(int color, const char* pattern, bool bold = false, int group = 0)
 	{
 		this->color = color;
 		this->bold = bold;
 		this->pattern = boost::regex(pattern);
+		this->group = group;
 	}
 };
 

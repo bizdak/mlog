@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <cassert>
 
+
 CfgSvcLogView::CfgSvcLogView(MainUi* ui, std::shared_ptr<Window> win, std::shared_ptr<LogFile> file)
 	: ui_(ui), win_(win), file_(file), tail_(true)
 {

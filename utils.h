@@ -2,6 +2,16 @@
 
 #include <boost/filesystem.hpp>
 #include <atomic>
+#include <stdarg.h>
+#include <windows.h>
+
+#if defined(min)
+#undef min
+#endif
+
+#if defined(max)
+#undef max
+#endif
 
 namespace fs = boost::filesystem;
 
@@ -18,3 +28,7 @@ public:
 void OpenLogFile(const boost::filesystem::path& file);
 
 fs::path GetMailMarshalInstallDirectory();
+
+void DLog(const char* fmt, ...);
+
+

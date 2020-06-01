@@ -3,7 +3,6 @@
 
 #include <boost/regex.hpp>
 #include <boost/circular_buffer.hpp>
-#include <windows.h>
 
 LogFile::LogFile(fs::path logDir, std::string namePrefix, bool cfgSvc, int bufSize) 
 	: fp_(nullptr), buffer_(bufSize), exiting_(false)
@@ -25,14 +24,19 @@ bool LogFile::Open(const char* filename)
 	fp_ = _fsopen(filename, "rt", _SH_DENYNO);
 	if (fp_ == nullptr)
 		return false;
+
+	const int Threshold = 20 * 8192;
 	struct stat st;
 	fstat(_fileno(fp_), &st);
-	auto bytes = min(st.st_size, 20 * 8192L);
-	fseek(fp_, -bytes, SEEK_END);
+	if (st.st_size > Threshold) {
+		auto bytes = std::min((int)st.st_size, Threshold);
+		fseek(fp_, -bytes, SEEK_END);
 
-	// forward to the next line
-	for (int c = fgetc(fp_); c != EOF && c != '\n' && !ferror(fp_);)
-		c = fgetc(fp_);
+		// forward to the next line
+		for (int c = fgetc(fp_); c != EOF && c != '\n' && !ferror(fp_);)
+			c = fgetc(fp_);
+	}
+
 	return true;
 }
 
@@ -54,7 +58,7 @@ void LogFile::CheckForLogFile()
 			entry->timestamp = time(nullptr);
 			entry->type = MessageType::system;
 			entry->body = "Directory does not exist or is not a directory: " + logDir_.string();
-			OutputDebugString(entry->body.c_str());
+			DLog("%s\n", entry->body.c_str());
 			AddLogEntry(entry);
 		}
 		return;
@@ -83,7 +87,7 @@ void LogFile::CheckForLogFile()
 			entry->timestamp = time(nullptr);
 			entry->type = MessageType::system;
 			entry->body = "Opened " + logFile_.string();
-			OutputDebugString(entry->body.c_str());
+			DLog("%s\n", entry->body.c_str());
 			AddLogEntry(entry);
 		}
 		else if (buffer_.size() == 0) {
@@ -91,7 +95,7 @@ void LogFile::CheckForLogFile()
 			entry->timestamp = time(nullptr);
 			entry->type = MessageType::system;
 			entry->body = "Error loading log file for " + latest.path().string();
-			OutputDebugString(entry->body.c_str());
+			DLog("%s\n", entry->body.c_str());
 			AddLogEntry(entry);
 		}
 	}
@@ -101,7 +105,7 @@ void LogFile::CheckForLogFile()
 			entry->timestamp = time(nullptr);
 			entry->type = MessageType::system;
 			entry->body = "Error loading log file for " + namePrefix_ + " - " + std::string(e.what());
-			OutputDebugString(entry->body.c_str());
+			DLog("%s\n", entry->body.c_str());
 			AddLogEntry(entry);
 		}
 	}

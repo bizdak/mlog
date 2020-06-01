@@ -6,7 +6,7 @@
 #include "helpview.h"
 #include "inputtext.h"
 #include "utils.h"
-#include "messagecollector.h"
+#include "messageview.h"
 
 MainUi::MainUi()
 {
@@ -94,6 +94,22 @@ void MainUi::CreateHelpView()
 	views_.push_back(helpView_);
 }
 
+void MainUi::CreateMessageView(MessageCollectorPtr msgCollector)
+{
+	int maxy, maxx;
+	getmaxyx(curscr, maxy, maxx);
+	auto view = new MessageView(this,
+		// sub-windows crash when resizing and larger than current size
+		// this could also easiliy mean that I don't understand ncurses enough  
+		//win_->MakeSubWindow(120, 100, 0, 0),
+		std::make_shared<Window>(newwin(maxy - 4, maxx, 2, 0)),
+		msgCollector);
+	ViewPtr logView(view);
+	logView->SetTitle("Messages");
+	hotKeyViews_.push_back(logView);
+	views_.push_back(logView);
+}
+
 void MainUi::Init()
 {
 	initscr();
@@ -141,6 +157,7 @@ void MainUi::Init()
 	msgCollector->AddLogFile(MessageCollector::LogType::sender, txLog);
 
 	CreateConsolidatedView();
+	CreateMessageView(msgCollector);
 	CreateHelpView();
 
 	if (!activeView_)
@@ -164,6 +181,10 @@ void MainUi::InitColorSchemes()
 		Color(LM_HIGHLIGHT_3, COLOR_RED, COLOR_BLACK),
 		Color(LM_HIGHLIGHT_4, COLOR_BLUE, COLOR_BLACK),
 		Color(LM_HIGHLIGHT_5, COLOR_YELLOW, COLOR_BLACK),
+		Color(LM_CATEGORY_SCRIPT, COLOR_WHITE, COLOR_CYAN),
+		Color(LM_CATEGORY_SCRIPT_NAME, COLOR_YELLOW, COLOR_CYAN),
+		Color(LM_RULESET_NAME, COLOR_CYAN, COLOR_BLACK),
+		Color(LM_RULE_NAME, COLOR_YELLOW, COLOR_BLACK),
 		});
 
 	colorSchemes_.push_back(ColorScheme{
@@ -179,6 +200,10 @@ void MainUi::InitColorSchemes()
 		Color(LM_HIGHLIGHT_3, COLOR_RED, COLOR_BLACK),
 		Color(LM_HIGHLIGHT_4, COLOR_BLUE, COLOR_BLACK),
 		Color(LM_HIGHLIGHT_5, COLOR_YELLOW, COLOR_BLACK),
+		Color(LM_CATEGORY_SCRIPT, COLOR_WHITE, COLOR_CYAN),
+		Color(LM_CATEGORY_SCRIPT_NAME, COLOR_RED, COLOR_CYAN),
+		Color(LM_RULESET_NAME, COLOR_CYAN, COLOR_BLACK),
+		Color(LM_RULE_NAME, COLOR_YELLOW, COLOR_BLACK),
 		});
 }
 
