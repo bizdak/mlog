@@ -7,12 +7,10 @@
 #include <curses.h>
 #include <varargs.h>
 #include <cassert>
-#include "LogFile.h"
-#include "wincurses.h"
+#include "logfile.h"
 #include "mainui.h"
-#include "MessageCollector.h"
+#include "messagecollector.h"
 #include <Windows.h>
-
 
 
 int main()

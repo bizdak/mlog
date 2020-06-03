@@ -3,13 +3,14 @@
 #include "view.h"
 #include "messagecollector.h"
 #include "mainui.h"
+#include <vector>
 
 class MessageView : public View
 {
 	MainUi* ui_;
 	std::shared_ptr<Window> win_;
 	MessageCollectorPtr collector_;
-	boost::circular_buffer<MessageInfoPtr> buffer_;
+	std::vector<MessageInfoPtr> buffer_;
 
 public:
 	MessageView(MainUi* ui, std::shared_ptr<Window> win, MessageCollectorPtr collector);

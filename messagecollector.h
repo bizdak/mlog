@@ -44,7 +44,7 @@ public:
 
 	void AddLogFile(LogType logType, LogFilePtr logFile);
 
-	const void FillBuffer(boost::circular_buffer<MessageInfoPtr>& buf) const;
+	const void FillBuffer(std::vector<MessageInfoPtr>& buf) const;
 
 private:
 	void ParseReceiverLog(LogFilePtr file, LogEntryPtr entry);

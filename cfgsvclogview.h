@@ -22,6 +22,7 @@ class CfgSvcLogView : public View
 
 	bool highlight_ = true;
 	std::vector<LogHighlight> highlights_;
+	bool displayDuration_ = false;
 
 public:
 	CfgSvcLogView(MainUi* ui, std::shared_ptr<Window> win, std::shared_ptr<LogFile> file);

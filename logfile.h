@@ -7,7 +7,10 @@
 #include <shared_mutex>
 #include "utils.h"
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 namespace fs = boost::filesystem;
+namespace ts = boost::posix_time;
 
 enum class MessageType { normal, continuation, cfgSvc, system, separator };
 
@@ -18,6 +21,7 @@ struct LogEntry
 	std::string time;
 	std::string body;
 	int tid = 0;
+	ts::time_duration duration;
 
 	// for config service
 	std::string severity;
@@ -61,6 +65,9 @@ class LogFile : public std::enable_shared_from_this<LogFile>
 	time_t lastLogCheck_ = 0;	// last time we checked for a new log
 
 	boost::signals2::signal<void(LogFilePtr, LogEntryPtr)> subscribers_;
+
+	// last timestamp or duration read
+	ts::time_duration lastDuration_;
 
 public:
 	LogFile(fs::path logDir, std::string namePrefix, bool cfgSvc=false, int bufSize=10000);

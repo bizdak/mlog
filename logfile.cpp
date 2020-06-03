@@ -166,6 +166,14 @@ std::shared_ptr<LogEntry> LogFile::ParseLine(const std::string& line)
 			entry->id = std::string(match[4].first, match[4].second);
 			entry->body = std::string(match[5].first, match[5].second);
 		}
+
+		try {
+			auto duration = ts::duration_from_string(entry->time);
+			if (lastDuration_ != ts::time_duration())
+				entry->duration = duration - lastDuration_;
+			lastDuration_ = duration;
+		}
+		catch (std::exception&) {}
 	}
 	else {
 		entry->type = MessageType::continuation;

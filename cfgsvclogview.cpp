@@ -100,6 +100,10 @@ bool CfgSvcLogView::Update(int c)
 		filter_ = !filter_;
 		return true;
 
+	case 'd': case 'D':
+		displayDuration_ = !displayDuration_;
+		break;
+
 	case 'o': case 'O':
 		OpenLogFile(file_->Filename());
 		break;
@@ -154,13 +158,19 @@ void CfgSvcLogView::Render()
 				win_->AttrOff(COLOR_PAIR(LM_THREAD_ID));
 				auto ts = entry->time.substr(0, 8);
 				bool resetBold = false;
-				if (!lastTimestamp.empty() && ts != lastTimestamp) {
+				if (!displayDuration_ && !lastTimestamp.empty() && ts != lastTimestamp
+					|| displayDuration_ && entry->duration > ts::seconds(1)) {
 					// highlight the start of a new second, but don't do it for the 1st line, otherwise, that's always bold
 					win_->AttrOn(A_BOLD);
 					resetBold = true;
 				}
 				win_->AttrOn(COLOR_PAIR(LM_TIMESTAMP));
-				win_->PrintF(i, margin + 25, tsWidth - 25, "%s", entry->time.c_str());
+				if (displayDuration_) {
+					win_->PrintF(i, margin + 25, tsWidth - 25, "%02d:%02d:%02d.%03d", entry->duration.hours(),
+						entry->duration.minutes(), entry->duration.seconds(), entry->duration.fractional_seconds() / 1000);
+				}
+				else
+					win_->PrintF(i, margin + 25, tsWidth - 25, "%s", entry->time.c_str());
 				win_->AttrOff(COLOR_PAIR(LM_TIMESTAMP));
 				lastTimestamp = ts;
 				if (resetBold)

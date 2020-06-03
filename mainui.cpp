@@ -209,6 +209,7 @@ void MainUi::InitColorSchemes()
 
 void MainUi::Run()
 {
+
 	Init();
 
 	// force a terminal reset

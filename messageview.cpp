@@ -2,9 +2,9 @@
 #include <algorithm>
 
 MessageView::MessageView(MainUi* ui, std::shared_ptr<Window> win, MessageCollectorPtr collector)
-	: ui_(ui), win_(win), collector_(collector), buffer_(1000)
+	: ui_(ui), win_(win), collector_(collector)
 {
-
+	buffer_.reserve(5000);
 }
 
 MessageView::~MessageView()
@@ -28,7 +28,7 @@ void MessageView::EnsureVisible()
 		startRow_ = selectedIdx_;
 
 	if (buffer_.size() > 0 && startRow_ >= buffer_.size())
-		startRow_ = buffer_.size() - 1;
+		startRow_ = (int)buffer_.size() - 1;
 	if (startRow_ < 0)
 		startRow_ = 0;
 }
@@ -37,7 +37,7 @@ void MessageView::CalculateMessageViewSize()
 {
 	int maxy = win_->GetMaxY();
 	msgBegY_ = 2;
-	msgEndY_ = maxy * .4;
+	msgEndY_ = (int)(maxy * .4);
 }
 
 bool MessageView::Update(int c)
@@ -60,6 +60,24 @@ bool MessageView::Update(int c)
 		}
 		break;
 
+	case KEY_NPAGE: case ' ': {
+		if (selectedIdx_ == buffer_.size() - 1)
+			return false;
+		int pageSize = msgEndY_ - msgBegY_ - 1;
+		startRow_ = std::min(startRow_ + pageSize, (int)buffer_.size() - 2);	// always leave one line on screen
+		selectedIdx_ = startRow_ = std::max(startRow_, 0);
+		SetPosition();
+		return true;
+	}
+
+	case KEY_PPAGE: {
+		int pageSize = msgEndY_ - msgBegY_ - 1;
+		selectedIdx_ = startRow_ = std::max(startRow_ - pageSize, 0);
+		tail_ = false;
+		SetPosition();
+		return true;
+	}
+
 	case '\n': case '\r':
 		tail_ = true;
 		return true;
@@ -74,7 +92,7 @@ void MessageView::Render()
 	int maxy = win_->GetMaxY();
 
 	if (tail_) {
-		selectedIdx_ = buffer_.size() == 0 ? 0 : buffer_.size() - 1;
+		selectedIdx_ = buffer_.size() == 0 ? 0 : (int)buffer_.size() - 1;
 		EnsureVisible();
 	}
 
@@ -158,10 +176,12 @@ void MessageView::RenderDetailView(int starty, int maxy)
 	win_->Move(y, 0);
 	win_->ClearToEol();
 
-	const auto& msg = buffer_[selectedIdx_];
-	y = RenderDetailLogView(y, maxy, "Receiver", msg->rxLogs);
-	y = RenderDetailLogView(y, maxy, "Engine", msg->engLogs);
-	y = RenderDetailLogView(y, maxy, "Sender", msg->txLogs);
+	if (selectedIdx_ < buffer_.size()) {
+		const auto& msg = buffer_[selectedIdx_];
+		y = RenderDetailLogView(y, maxy, "Receiver", msg->rxLogs);
+		y = RenderDetailLogView(y, maxy, "Engine", msg->engLogs);
+		y = RenderDetailLogView(y, maxy, "Sender", msg->txLogs);
+	}
 
 	// clear out remaining lines
 	while (y++ < maxy) {
@@ -216,8 +236,13 @@ void MessageView::Resize()
 
 void MessageView::RefreshBuffer()
 {
-	buffer_.clear();
-	collector_->FillBuffer(buffer_);
+	if (tail_) {
+		buffer_.clear();
+		collector_->FillBuffer(buffer_);
+		selectedIdx_ = buffer_.size() == 0 ? 0 : (int)buffer_.size() - 1;
+		if (startRow_ > buffer_.size())
+			startRow_ = selectedIdx_;
+	}
 }
 
 void MessageView::SetPosition()

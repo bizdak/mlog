@@ -115,6 +115,10 @@ bool LogView::Update(int c)
 	case 'o': case 'O':
 		OpenLogFile(file_->Filename());
 		break;
+	
+	case 'd': case 'D':
+		displayDuration_ = !displayDuration_;
+		break;
 	}
 
 	return false;
@@ -164,13 +168,29 @@ void LogView::Render()
 				win_->AttrOff(COLOR_PAIR(LM_THREAD_ID));
 				auto ts = entry->time.substr(0, 8);
 				bool resetBold = false;
-				if (!lastTimestamp.empty() && ts != lastTimestamp) {
+				if (!displayDuration_ && !lastTimestamp.empty() && ts != lastTimestamp) {
 					// highlight the start of a new second, but don't do it for the 1st line, otherwise, that's always bold
 					win_->AttrOn(A_BOLD);
 					resetBold = true;
 				}
 				win_->AttrOn(COLOR_PAIR(LM_TIMESTAMP));
-				win_->PrintF(i, margin + 6, tsWidth - 6, "%s", entry->time.c_str());
+				if (displayDuration_) {
+					win_->Move(i, margin + 6);
+
+					if (!resetBold && entry->duration.hours() > 0) win_->AttrOn(A_BOLD), resetBold = true;
+					win_->PrintF("%02d:", entry->duration.hours());
+
+					if (!resetBold && entry->duration.minutes() > 0) win_->AttrOn(A_BOLD), resetBold = true;
+					win_->PrintF("%02d:", entry->duration.minutes());
+
+					if (!resetBold && entry->duration.seconds() > 0) win_->AttrOn(A_BOLD), resetBold = true;
+					win_->PrintF("%02d.", entry->duration.seconds());
+					
+					if (!resetBold && entry->duration.fractional_seconds() / 1000 > 0) win_->AttrOn(A_BOLD), resetBold = true;
+					win_->PrintF("%03d", entry->duration.fractional_seconds() / 1000);
+				}
+				else
+					win_->PrintF(i, margin + 6, tsWidth - 6, "%s", entry->time.c_str());
 				win_->AttrOff(COLOR_PAIR(LM_TIMESTAMP));
 				lastTimestamp = ts;
 				if (resetBold)

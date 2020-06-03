@@ -5,12 +5,17 @@ MessageCollector::MessageCollector()
 
 }
 
-const void MessageCollector::FillBuffer(boost::circular_buffer<MessageInfoPtr>& buf) const
+const void MessageCollector::FillBuffer(std::vector<MessageInfoPtr>& buf) const
 {
-	Spinlock lock(lock_);
-	buf.clear();
-	for (auto it : messages_) 
-		buf.push_back(it.second);
+	{
+		Spinlock lock(lock_);
+		buf.clear();
+		for (auto it : messages_)
+			buf.push_back(it.second);
+	}
+	std::sort(buf.begin(), buf.end(), [](const auto& lhs, const auto& rhs) {
+		return lhs->touchTime < rhs->touchTime;
+	});
 }
 
 void MessageCollector::AddLogFile(LogType logType, LogFilePtr logFile)
@@ -40,6 +45,7 @@ void MessageCollector::AddLogFile(LogType logType, LogFilePtr logFile)
 
 MessageInfoPtr MessageCollector::CreateMessageInfo(const std::string msgName)
 {
+	Spinlock lock(lock_);
 	auto it = messages_.find(msgName);
 	if (it != messages_.end()) {
 		it->second->touchTime = time(nullptr);
@@ -50,17 +56,21 @@ MessageInfoPtr MessageCollector::CreateMessageInfo(const std::string msgName)
 	const int Threshold = 10;
 	const int EntriesToRemove = 3;
 #else
-	const int Threshold = 1000;
-	const int EntriesToRemove = 100;
+	const int Threshold = 5000;
+	const int EntriesToRemove = 500;
+//	const int Threshold = 100;
+//	const int EntriesToRemove = 10;
 #endif
 
 	if (messages_.size() > Threshold) {
 		DLog("Expiring entries out of the message collector\n");
-		std::vector<MessageInfoPtr> sorted(messages_.size());
+		std::vector<MessageInfoPtr> sorted;
 		for (auto tmp : messages_) 
 			sorted.push_back(tmp.second);
 
-		std::sort(sorted.begin(), sorted.end(), [](MessageInfoPtr lhs, MessageInfoPtr rhs) { return lhs->touchTime < rhs->touchTime; });
+		std::sort(sorted.begin(), sorted.end(), 
+			[](const MessageInfoPtr& lhs, const MessageInfoPtr& rhs) { 
+				return lhs->touchTime < rhs->touchTime; });
 		for (int i = 0; i < EntriesToRemove; i++) 
 			messages_.erase(messages_.find(sorted[i]->messageName));
 		DLog("Removed %d entries from message collector\n", EntriesToRemove);
@@ -86,7 +96,6 @@ void MessageCollector::ParseReceiverLog(LogFilePtr file, LogEntryPtr entry)
 	if (boost::regex_search(entry->body, match, arrivePattern, boost::match_default)) {
 		assert(match.length() > 1);
 		auto msgName = std::string(match[1].begin(), match[1].end());
-		DLog("Recv: <%s>\n", msgName.c_str());
 		auto msgInfo = CreateMessageInfo(msgName);
 		msgInfo->rxTime = entry->time;
 		msgInfo->rxLogs.push_back(entry);
@@ -106,7 +115,6 @@ void MessageCollector::ParseReceiverLog(LogFilePtr file, LogEntryPtr entry)
 	else if (boost::regex_search(entry->body, match, msgPattern, boost::match_default)) {
 		assert(match.length() > 2);
 		auto msgName = std::string(match[1].begin(), match[1].end());
-		DLog("Recv: %s\n", entry->body.c_str());
 		auto msgInfo = CreateMessageInfo(msgName);
 		msgInfo->rxLogs.push_back(entry);
 	}
@@ -120,7 +128,6 @@ void MessageCollector::ParseEngineLog(LogFilePtr file, LogEntryPtr entry)
 	if (boost::regex_search(entry->body, match, msgPattern, boost::match_default)) {
 		assert(match.length() > 1);
 		auto msgName = std::string(match[1].begin(), match[1].end());
-		DLog("Eng: %s\n", entry->body.c_str());
 		auto msgInfo = CreateMessageInfo(msgName);
 		if (msgInfo->engTimeFirst.empty())
 			msgInfo->engTimeFirst = entry->time;
@@ -138,7 +145,6 @@ void MessageCollector::ParseSenderLog(LogFilePtr file, LogEntryPtr entry)
 	if (boost::regex_search(entry->body, match, msgPattern, boost::match_default)) {
 		assert(match.length() > 1);
 		auto msgName = std::string(match[1].begin(), match[1].end());
-		DLog("Send: %s\n", entry->body.c_str());
 		auto msgInfo = CreateMessageInfo(msgName);
 		if (msgInfo->txTimeFirst.empty())
 			msgInfo->txTimeFirst = entry->time;
