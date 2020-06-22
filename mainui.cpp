@@ -135,20 +135,21 @@ void MainUi::Init()
 
 	namespace fs = boost::filesystem;
 	fs::path mmdir = GetMailMarshalInstallDirectory();
-	fs::path logging = mmdir / fs::path("logging");
+	fs::path managerLogging = GetManagerLoggingDirectory();
+	fs::path controllerLogging = GetControllerLoggingDirectory();
 	fs::path cfgSvcLogging = mmdir / fs::path("Config Service") / fs::path("logging");
 
-	AddLog(std::make_shared<LogFile>(logging, "MMArrayManager"), "AM");
-	AddLog(std::make_shared<LogFile>(logging, "MMController"), "Controller");
+	AddLog(std::make_shared<LogFile>(managerLogging, "MMArrayManager"), "AM");
+	AddLog(std::make_shared<LogFile>(controllerLogging, "MMController"), "Controller");
 
-	auto rxLog = std::make_shared<LogFile>(logging, "MMReceiver");
-	auto engLog = std::make_shared<LogFile>(logging, "MMEngine");
-	auto txLog = std::make_shared<LogFile>(logging, "MMSender");
+	auto rxLog = std::make_shared<LogFile>(controllerLogging, "MMReceiver");
+	auto engLog = std::make_shared<LogFile>(controllerLogging, "MMEngine");
+	auto txLog = std::make_shared<LogFile>(controllerLogging, "MMSender");
 
 	AddLog(rxLog, "Receiver");
 	AddLog(engLog, "Engine");
 	AddLog(txLog, "Sender");
-	AddLog(std::make_shared<LogFile>(logging, "MMPop3"), "Pop3");
+	AddLog(std::make_shared<LogFile>(controllerLogging, "MMPop3"), "Pop3");
 	AddLog(std::make_shared<LogFile>(cfgSvcLogging, "segcfgapi", true), "Cfg Service");
 
 	auto msgCollector = std::make_shared<MessageCollector>();
@@ -276,6 +277,14 @@ bool MainUi::Update()
 			view->Resize();
 		return true;
 
+	case 'b': case 'B':
+	{
+		std::vector<std::string> files;
+		for (auto file : logfiles_)
+			files.emplace_back(file->Filename().string());
+		OpenBareTail(files);
+		break;
+	}
 	case 'c':
 		SetColorScheme(colorSchemeIndex_ + 1);
 		return true;

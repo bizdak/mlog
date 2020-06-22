@@ -107,6 +107,10 @@ bool CfgSvcLogView::Update(int c)
 	case 'o': case 'O':
 		OpenLogFile(file_->Filename());
 		break;
+
+	case 'b': case 'B':
+		OpenLogFile(file_->Filename().parent_path());
+		break;
 	}
 
 	return false;

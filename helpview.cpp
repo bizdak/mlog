@@ -8,12 +8,15 @@ HelpView::HelpView(MainUi* ui, std::shared_ptr<Window> win)
 		"Lloyd Macrohon's MailMarshal Logs Viewer",
 		"",
 		"Keys",
-		"  o       - open log file in editor",
-		"  h       - toggle highlight",
+		"  b       - open baretail",
+		"  c       - cycle colours",
+		"  d       - toggle timestamp or duration (certain views only)",
+		"  e       - open explorer",
 		"  f       - filter certain entries (available in CfgService view only)",
-		"  /       - search for string",
+		"  h       - toggle highlight",
+		"  o       - open log file in editor",
 		"  q       - quit viewer",
-		"",
+		"  /       - search for string",
 		"  esc     - close help"
 	};
 }

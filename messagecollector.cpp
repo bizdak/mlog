@@ -58,8 +58,6 @@ MessageInfoPtr MessageCollector::CreateMessageInfo(const std::string msgName)
 #else
 	const int Threshold = 5000;
 	const int EntriesToRemove = 500;
-//	const int Threshold = 100;
-//	const int EntriesToRemove = 10;
 #endif
 
 	if (messages_.size() > Threshold) {

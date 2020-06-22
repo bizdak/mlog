@@ -115,6 +115,10 @@ bool LogView::Update(int c)
 	case 'o': case 'O':
 		OpenLogFile(file_->Filename());
 		break;
+
+	case 'e': case 'E':
+		OpenLogFile(file_->Filename().parent_path());
+		break;
 	
 	case 'd': case 'D':
 		displayDuration_ = !displayDuration_;
